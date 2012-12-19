@@ -86,9 +86,7 @@ class EmptyLot(SchellingAgent):
     def info(self):
         return 'Empty lot at %s,%s.'%(self.x,self.y)
         
-class LikesSameAgent(SchellingAgent):
-    def __init__(self,neighborhood,mytype,preference,coordinates=None,view_radius = 1):
-        super(LikesSameAgent,self).__init__(neighborhood,mytype,preference,coordinates,view_radius)       
+class LikesSameAgent(SchellingAgent):    
     def isUnhappy(self):
         if self.getNeighbors()==[]: return False
         likeme = self.percentSame()
@@ -98,9 +96,7 @@ class LikesSameAgent(SchellingAgent):
     def info(self):
         return 'Likes Same Agent Type %s Preference %s at %s,%s.'%(self.mytype,self.preference,self.x,self.y)
 
-class LikesOthersAgent(SchellingAgent):
-    def __init__(self,neighborhood,mytype,percent,coordinates=None,view_radius = 1):
-        super(LikesOthersAgent,self).__init__(neighborhood,mytype,percent,coordinates,view_radius)        
+class LikesOthersAgent(SchellingAgent):     
     def isUnhappy(self):
         if self.getNeighbors()==[]: return False       
         others_percent = 1.0 - self.percentSame()
