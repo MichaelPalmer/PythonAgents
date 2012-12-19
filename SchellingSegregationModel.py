@@ -243,6 +243,7 @@ class testagents(unittest.TestCase):
         suite.addTest(testagents('test_percentAllSame'))    
         suite.addTest(testagents('test_percentSomeSame'))
         suite.addTest(testagents('test_smallMove'))
+        suite.addTest(testagents('test_smallMoveLikesOthers'))
         suite.addTest(testagents('test_buildContinuousLikeSame'))
         suite.addTest(testagents('test_buildContinuousLikeOthers'))
         suite.addTest(testagents('test_continuouslikesameisunhappy'))
@@ -324,6 +325,22 @@ class testagents(unittest.TestCase):
         after  =  n.getStats()
         self.assertEqual(after,(0.0,1.0))
         self.assertEqual(len(n.agents),4)
+
+    def test_smallMoveLikesOthers(self):
+        seed(1)
+        n=Neighborhood(10)
+        s=LikesOthersAgent(n,'X',0.1,(0,1)) 
+        s1=LikesSameAgent(n,'X',0.1,(1,1))
+        s2=LikesSameAgent(n,'X',0.1,(2,1)) 
+        s3=LikesOthersAgent(n,'O',0.1,(2,2))
+        before =  n.getStats()
+        self.assertEqual(before,(0.25,0.5))
+        self.assertEqual(len(n.agents),4)
+        n.move() 
+        after  =  n.getStats()
+        self.assertEqual(len(n.agents),4)
+        self.assertEqual(after,(0.0,1/3.0))
+  
         
     def test_buildContinuousLikeSame(self):
         n=Neighborhood(10)
