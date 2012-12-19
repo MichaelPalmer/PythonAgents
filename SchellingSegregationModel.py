@@ -26,6 +26,7 @@ Design Decisions:
 
 from random import sample
 from random import uniform
+from random import seed
 import unittest
 import csv
 
@@ -53,6 +54,11 @@ class SchellingAgent(object):
         else:
             self.x              = 0
             self.y              = 0     
+            
+    def isMyType(self,neighbor):
+        
+        if neighbor.mytype == self.mytype: return True
+        return False
                
     def getNeighbors(self):
         adjoining_lots = self.neighborhood.getNeighborhood(self.x,self.y,self.neighbor_radius)
@@ -61,7 +67,7 @@ class SchellingAgent(object):
     
     def getSameNeighbors(self):
         neighbors = self.getNeighbors()
-        same_neighbors = [neighbor  for neighbor in neighbors if neighbor.mytype == self.mytype]
+        same_neighbors = [neighbor  for neighbor in neighbors if self.isMyType(neighbor)==True]
         return same_neighbors
     
     def percentSame(self):
@@ -76,7 +82,7 @@ class SchellingAgent(object):
         return False
     
     def __repr__(self):
-        return self.mytype
+        return repr(self.mytype)
 
 class EmptyLot(SchellingAgent):
     def __init__(self,neighborhood,coordinates):
@@ -104,8 +110,33 @@ class LikesOthersAgent(SchellingAgent):
             return True
         return False   
     def info(self):
-        return 'Likes Other Agents Type %s Preference %s at %s,%s.'%(self.mytype,self.preference,self.x,self.y) 
-
+        return 'Likes Other Agent Type %s Preference %s at %s,%s.'%(self.mytype,self.preference,self.x,self.y) 
+    
+class ContinuousSchellingAgent(SchellingAgent):
+    def __init__(self,neighborhood,mytype,minrange,maxrange,percentpreference = 0.0,coordinates=None,view_radius = 1):
+        super(ContinuousSchellingAgent,self).__init__(neighborhood,mytype,percentpreference,coordinates,view_radius)
+        self.minrange = minrange
+        self.maxrange = maxrange
+    def isMyType(self,neighbor): 
+        if neighbor.mytype >= self.minrange and neighbor.mytype <= self.maxrange: return True
+        return False
+    
+class ContinuousLikesSameAgent(ContinuousSchellingAgent):
+    def isUnhappy(self):
+        if self.getNeighbors()==[]: return False
+        likeme = self.percentSame()
+        if likeme < self.preference:
+            return True
+        return False    
+    
+class ContinuousLikesOtherAgent(ContinuousSchellingAgent):
+    def isUnhappy(self):
+        if self.getNeighbors()==[]: return False       
+        others_percent = 1.0 - self.percentSame()
+        if others_percent < self.preference:
+            return True
+        return False      
+        
 class Neighborhood(object):
     def __init__(self,dimension):
         self.dimension = dimension 
@@ -262,8 +293,18 @@ class testagents(unittest.TestCase):
         s2=LikesSameAgent(n,'X',0.1,(2,1)) 
         s3=LikesSameAgent(n,'O',0.4,(0,2))
         self.assertEqual(s.percentSame(),0.5)     
+  
+    def test_isUnhappy(self):
+        seed(1)
+        n=Neighborhood(10)
+        s=LikesSameAgent(n,'X',0.1,(0,1)) 
+        s1=LikesSameAgent(n,'X',0.1,(1,1))
+        s2=LikesSameAgent(n,'X',0.1,(2,1)) 
+        s3=LikesSameAgent(n,'O',0.4,(0,2))  
+        self.assertEquals(s3.isUnhappy(),True)
         
     def test_smallMove(self):
+        seed(1)
         n=Neighborhood(10)
         s=LikesSameAgent(n,'X',0.1,(0,1)) 
         s1=LikesSameAgent(n,'X',0.1,(1,1))
@@ -276,5 +317,55 @@ class testagents(unittest.TestCase):
         after  =  n.getStats()
         self.assertEqual(after,(0.0,1.0))
         self.assertEqual(len(n.agents),4)
+        
+    def test_buildContinuousLikeSame(self):
+        n=Neighborhood(10)
+        s=ContinuousLikesSameAgent(n,45,40,50,0.3,(0,1))
+        self.assertEqual(s.mytype,45)
+        self.assertEqual(s.minrange,40)
+        self.assertEqual(s.maxrange,50)
+        self.assertEqual(s.preference,0.3)
+        self.assertEqual(s.isUnhappy(),False)
+        self.assertEquals(s.x,0)
+        self.assertEquals(s.y,1)
+        
+    def test_buildContinuousLikeOthers(self):
+        n=Neighborhood(10)
+        s=ContinuousLikesOtherAgent(n,45,40,50,0.3)
+        self.assertEqual(s.mytype,45)
+        self.assertEqual(s.minrange,40)
+        self.assertEqual(s.maxrange,50)        
+        self.assertEqual(s.preference,0.3)
+        self.assertEqual(s.isUnhappy(),False)
+        
+    def test_continuouslikesameisunhappy(self):
+        seed(1)
+        n=Neighborhood(10)
+        s=ContinuousLikesSameAgent(n,45,40,50,0.1,(0,1)) 
+        s1=ContinuousLikesSameAgent(n,41,31,51,0.1,(1,1)) 
+        s3=ContinuousLikesSameAgent(n,22,20,30,0.4,(0,2)) 
+        self.assertEquals(s3.isUnhappy(),True)   
+        
+    def test_continuouslikeotherisunhappy(self):
+        seed(1)
+        n=Neighborhood(10)
+        s=ContinuousLikesSameAgent(n,45,40,50,0.1,(0,1)) 
+        s1=ContinuousLikesSameAgent(n,41,31,51,0.1,(1,1)) 
+        s3=ContinuousLikesOtherAgent(n,39,30,46,0.4,(0,2)) 
+        self.assertEquals(s3.isUnhappy(),True)  
+#    def test_continuoussmallmove(self):
+#        seed(1)
+#        n=Neighborhood(10)
+#        s=ContinuousLikesSameAgent(n,45,40,50,0.1,(0,1)) 
+#        s1=ContinuousLikesSameAgent(n,41,31,51,0.1,(1,1))
+#        s2=ContinuousLikesSameAgent(n,47,37,49,0.1,(2,1)) 
+#        s3=ContinuousLikesSameAgent(n,22,20,30,0.4,(0,2))        
+#        before =  n.getStats()
+#        self.assertEqual(before,(0.25,0.5))
+#        self.assertEqual(len(n.agents),4)
+#        n.move() 
+#        after  =  n.getStats()
+#        self.assertEqual(after,(0.0,1.0))
+#        self.assertEqual(len(n.agents),4)        
        
           
