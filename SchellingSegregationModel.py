@@ -242,7 +242,14 @@ class testagents(unittest.TestCase):
         suite.addTest(testagents('test_buildLikeOthers'))       
         suite.addTest(testagents('test_percentAllSame'))    
         suite.addTest(testagents('test_percentSomeSame'))
-        suite.addTest(testagents('test_smallMove'))          
+        suite.addTest(testagents('test_smallMove'))
+        suite.addTest(testagents('test_buildContinuousLikeSame'))
+        suite.addTest(testagents('test_buildContinuousLikeOthers'))
+        suite.addTest(testagents('test_continuouslikesameisunhappy'))
+        suite.addTest(testagents('test_continuouslikeotherisunhappy'))
+        suite.addTest(testagents('test_continuoussmallmove'))
+
+        
         return suite
       
     def runTest(self):
@@ -352,20 +359,21 @@ class testagents(unittest.TestCase):
         s=ContinuousLikesSameAgent(n,45,40,50,0.1,(0,1)) 
         s1=ContinuousLikesSameAgent(n,41,31,51,0.1,(1,1)) 
         s3=ContinuousLikesOtherAgent(n,39,30,46,0.4,(0,2)) 
-        self.assertEquals(s3.isUnhappy(),True)  
-#    def test_continuoussmallmove(self):
-#        seed(1)
-#        n=Neighborhood(10)
-#        s=ContinuousLikesSameAgent(n,45,40,50,0.1,(0,1)) 
-#        s1=ContinuousLikesSameAgent(n,41,31,51,0.1,(1,1))
-#        s2=ContinuousLikesSameAgent(n,47,37,49,0.1,(2,1)) 
-#        s3=ContinuousLikesSameAgent(n,22,20,30,0.4,(0,2))        
-#        before =  n.getStats()
-#        self.assertEqual(before,(0.25,0.5))
-#        self.assertEqual(len(n.agents),4)
-#        n.move() 
-#        after  =  n.getStats()
-#        self.assertEqual(after,(0.0,1.0))
-#        self.assertEqual(len(n.agents),4)        
+        self.assertEquals(s3.isUnhappy(),True)
+        
+    def test_continuoussmallmove(self):
+        seed(1)
+        n=Neighborhood(10)
+        s=ContinuousLikesSameAgent(n,45,40,50,0.1,(0,1)) 
+        s1=ContinuousLikesSameAgent(n,41,31,51,0.1,(1,1))
+        s2=ContinuousLikesSameAgent(n,47,37,49,0.1,(2,1)) 
+        s3=ContinuousLikesSameAgent(n,22,20,30,0.4,(0,2))        
+        before =  n.getStats()
+        self.assertEqual(before,(0.25,0.5))
+        self.assertEqual(len(n.agents),4)
+        n.move() 
+        after  =  n.getStats()
+        self.assertEqual(after,(0.0,1.0))
+        self.assertEqual(len(n.agents),4)        
        
           
