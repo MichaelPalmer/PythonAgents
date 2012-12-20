@@ -173,6 +173,7 @@ class Neighborhood(object):
         self.dimension = dimension 
         self.lots      = [[EmptyLot(self,(x,y)) for y in range(self.dimension)] for x in range(self.dimension)]
         self.agents    = []
+        self.unhappyagents = []
     def wrap(self,x):
         if x<0: return(self.dimension+x)
         if x>self.dimension-1: return(x-self.dimension)
@@ -193,9 +194,10 @@ class Neighborhood(object):
         self.agents.append(agent)
         self.lots[agent.x][agent.y] = agent
     def getUnhappyAgents(self):
-        return [agent for agent in self.agents if agent.isUnhappy() == True]
+        self.unhappyagents = [agent for agent in self.agents if agent.isUnhappy() == True]
+        return self.unhappyagents
     def percentUnhappy(self):
-        totalUnhappy = len(self.getUnhappyAgents())
+        totalUnhappy = len(self.unhappyagents)
         return totalUnhappy / (len(self.agents) *1.0)
     def percentSimilar(self):
         similar_neighbors = sum([len(x.getSameNeighbors()) for x in self.agents]) 
@@ -229,16 +231,14 @@ class Neighborhood(object):
         csvWriter = csv.writer(outputFile)
         csvWriter.writerows(self.lots)
         outputFile.close()
-        
-        
-def run(neighborhood,ticks):
-    history = []
-    for tick in range(ticks):
-        stats = neighborhood.getStats()
-        history.append((tick,stats))
-        neighborhood.move()
-        if stats[0] ==0.0: break
-    return history
+    def run(self,ticks = 10):
+        history = []
+        for tick in range(ticks):
+            stats = self.getStats()
+            history.append((tick,stats))
+            self.move()
+            if stats[0] ==0.0: break
+        return history
     
 
 def ageNeighborhood(size,populatedpercent=.95,preference=0.3,averageage=45,minage=20,maxage=90):
@@ -277,7 +277,8 @@ def likesOthersNeighborhood(size,preference=0.4,typeA='X',typeB='O',typeASplit=0
 
 def moveimprove():
     n = likesSameNeighborhood(100)
-    print timeit.timeit(stmt=n.move,number=10)
+    print 'running unhappy'
+    print timeit.timeit(stmt=n.run,number=10)
   
         
 class testagents(unittest.TestCase):
