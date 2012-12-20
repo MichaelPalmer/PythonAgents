@@ -54,6 +54,7 @@ from random import triangular
 from math   import floor
 import unittest
 import csv
+import timeit
 
 
 EMPTYLOT = 'Empty'
@@ -207,9 +208,9 @@ class Neighborhood(object):
     def move(self):
         unhappy_agents = self.getUnhappyAgents()
         empty_lots     = [lot for row in self.lots for lot in row if lot.mytype == EMPTYLOT]
-        places_to_move = []
-        places_to_move.extend(unhappy_agents)
-        places_to_move.extend(empty_lots)
+        places_to_move = set()
+        places_to_move.union(set(unhappy_agents))
+        places_to_move.union(set(empty_lots))
         while (len(places_to_move)>=2):
             movers = sample(places_to_move,2)
             places_to_move.remove(movers[0])
@@ -272,7 +273,11 @@ def likesOthersNeighborhood(size,preference=0.4,typeA='X',typeB='O',typeASplit=0
                 LikesOthersAgent(neighborhood,typeA,preference,(x,y))
             elif pick <= typeASplit + typeBSplit:
                 LikesOthersAgent(neighborhood,typeB,preference,(x,y))
-    return neighborhood 
+    return neighborhood
+
+def moveimprove():
+    n = likesSameNeighborhood(100)
+    print timeit.timeit(stmt=n.move,number=10)
   
         
 class testagents(unittest.TestCase):
