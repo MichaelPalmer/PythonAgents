@@ -54,6 +54,7 @@ from random import triangular
 from math   import floor
 import unittest
 import csv
+import timeit
 
 
 EMPTYLOT = 'Empty'
@@ -95,16 +96,21 @@ class SchellingAgent(object):
         real_neighbors = [lot for row in adjoining_lots for lot in row  if lot.mytype!=EMPTYLOT and lot!=self]
         return real_neighbors
     
-    def getSameNeighbors(self):
-        neighbors = self.getNeighbors()
+    def getSameNeighbors(self,neighbors = None):
+        if neighbors ==None: neighbors = self.getNeighbors()
         same_neighbors = [neighbor  for neighbor in neighbors if self.isMyType(neighbor)==True]
         return same_neighbors
+
+    def countNeighbors(self):
+        neighbors     = self.getNeighbors()
+        sameNeighbors = self.getSameNeighbors(neighbors)
+        return (len(sameNeighbors),len(neighbors))
     
-    def percentSame(self):
-        neighbors = self.getNeighbors()
+    def percentSame(self,neighbors = None):
+        if neighbors == None: neighbors = self.getNeighbors()
         # getNeighbors returns nothing when the agent is surrounded by empty lots
         if len(neighbors)==0: return 0.0
-        numbersame = len(self.getSameNeighbors())
+        numbersame = len(self.getSameNeighbors(neighbors))
         percent = numbersame / (len(neighbors) * 1.0)
         return percent        
     
@@ -124,8 +130,9 @@ class EmptyLot(SchellingAgent):
         
 class LikesSameAgent(SchellingAgent):    
     def isUnhappy(self):
-        if self.getNeighbors()==[]: return False
-        likeme = self.percentSame()
+        neighbors = self.getNeighbors()
+        if neighbors==[]: return False
+        likeme = self.percentSame(neighbors)
         if likeme < self.preference:
             return True
         return False
@@ -134,8 +141,9 @@ class LikesSameAgent(SchellingAgent):
 
 class LikesOthersAgent(SchellingAgent):     
     def isUnhappy(self):
-        if self.getNeighbors()==[]: return False       
-        others_percent = 1.0 - self.percentSame()
+        neighbors = self.getNeighbors()
+        if neighbors==[]: return False       
+        others_percent = 1.0 - self.percentSame(neighbors)
         if others_percent < self.preference:
             return True
         return False   
@@ -153,19 +161,21 @@ class ContinuousSchellingAgent(SchellingAgent):
     
 class ContinuousLikesSameAgent(ContinuousSchellingAgent):
     def isUnhappy(self):
-        if self.getNeighbors()==[]: return False
-        likeme = self.percentSame()
+        neighbors = self.getNeighbors()
+        if neighbors==[]: return False
+        likeme = self.percentSame(neighbors)
         if likeme < self.preference:
             return True
         return False    
     
 class ContinuousLikesOtherAgent(ContinuousSchellingAgent):
     def isUnhappy(self):
-        if self.getNeighbors()==[]: return False       
-        others_percent = 1.0 - self.percentSame()
+        neighbors = self.getNeighbors()
+        if neighbors==[]: return False       
+        others_percent = 1.0 - self.percentSame(neighbors)
         if others_percent < self.preference:
             return True
-        return False      
+        return False     
         
 class Neighborhood(object):
     def __init__(self,dimension):
@@ -203,8 +213,9 @@ class Neighborhood(object):
            totalUnhappy = len(self.getUnhappyAgents())
         return totalUnhappy / (len(self.agents) *1.0)
     def percentSimilar(self):
-        similar_neighbors = sum([len(x.getSameNeighbors()) for x in self.agents]) 
-        total_neighbors   = sum([len(x.getNeighbors()) for x in self.agents])
+        neighborData = [ x.countNeighbors() for x in self.agents]
+        similar_neighbors = sum([x[0] for x in neighborData]) 
+        total_neighbors   = sum([x[1] for x in neighborData])
         return similar_neighbors / (total_neighbors *1.0)        
     def getStats(self):
         percent_unhappy   = self.percentUnhappy()
@@ -234,16 +245,14 @@ class Neighborhood(object):
         csvWriter = csv.writer(outputFile)
         csvWriter.writerows(self.lots)
         outputFile.close()
-        
-        
-def run(neighborhood,ticks):
-    history = []
-    for tick in range(ticks):
-        stats = neighborhood.getStats()
-        history.append((tick,stats))
-        neighborhood.move()
-        if stats[0] ==0.0: break
-    return history
+    def run(self,ticks=30):
+        history = []
+        for tick in range(ticks):
+            stats = self.getStats()
+            history.append((tick,stats))
+            self.move()
+            if stats[0] ==0.0: break
+        return history
     
 
 def ageNeighborhood(size,populatedpercent=.95,preference=0.3,averageage=45,minage=20,maxage=90):
@@ -278,8 +287,12 @@ def likesOthersNeighborhood(size,preference=0.4,typeA='X',typeB='O',typeASplit=0
                 LikesOthersAgent(neighborhood,typeA,preference,(x,y))
             elif pick <= typeASplit + typeBSplit:
                 LikesOthersAgent(neighborhood,typeB,preference,(x,y))
-    return neighborhood 
-  
+    return neighborhood
+
+def moveimprove():
+    n = likesSameNeighborhood(100)
+    a = n.agents[0]
+    print timeit.timeit(stmt = n.move,number = 1)
         
 class testagents(unittest.TestCase):
     def getsuite(self):
