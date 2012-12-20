@@ -54,7 +54,6 @@ from random import triangular
 from math   import floor
 import unittest
 import csv
-import timeit
 
 
 EMPTYLOT = 'Empty'
@@ -174,6 +173,7 @@ class Neighborhood(object):
         self.lots      = [[EmptyLot(self,(x,y)) for y in range(self.dimension)] for x in range(self.dimension)]
         self.agents    = []
         self.unhappyagents = []
+        self.runOnce   = False
     def wrap(self,x):
         if x<0: return(self.dimension+x)
         if x>self.dimension-1: return(x-self.dimension)
@@ -197,7 +197,10 @@ class Neighborhood(object):
         self.unhappyagents = [agent for agent in self.agents if agent.isUnhappy() == True]
         return self.unhappyagents
     def percentUnhappy(self):
-        totalUnhappy = len(self.unhappyagents)
+        if self.runOnce:
+           totalUnhappy = len(self.unhappyagents)
+        else:
+           totalUnhappy = len(self.getUnhappyAgents())
         return totalUnhappy / (len(self.agents) *1.0)
     def percentSimilar(self):
         similar_neighbors = sum([len(x.getSameNeighbors()) for x in self.agents]) 
@@ -210,9 +213,9 @@ class Neighborhood(object):
     def move(self):
         unhappy_agents = self.getUnhappyAgents()
         empty_lots     = [lot for row in self.lots for lot in row if lot.mytype == EMPTYLOT]
-        places_to_move = set()
-        places_to_move.union(set(unhappy_agents))
-        places_to_move.union(set(empty_lots))
+        places_to_move = []
+        places_to_move.extend(unhappy_agents)
+        places_to_move.extend(empty_lots)
         while (len(places_to_move)>=2):
             movers = sample(places_to_move,2)
             places_to_move.remove(movers[0])
@@ -231,14 +234,16 @@ class Neighborhood(object):
         csvWriter = csv.writer(outputFile)
         csvWriter.writerows(self.lots)
         outputFile.close()
-    def run(self,ticks = 10):
-        history = []
-        for tick in range(ticks):
-            stats = self.getStats()
-            history.append((tick,stats))
-            self.move()
-            if stats[0] ==0.0: break
-        return history
+        
+        
+def run(neighborhood,ticks):
+    history = []
+    for tick in range(ticks):
+        stats = neighborhood.getStats()
+        history.append((tick,stats))
+        neighborhood.move()
+        if stats[0] ==0.0: break
+    return history
     
 
 def ageNeighborhood(size,populatedpercent=.95,preference=0.3,averageage=45,minage=20,maxage=90):
@@ -273,12 +278,7 @@ def likesOthersNeighborhood(size,preference=0.4,typeA='X',typeB='O',typeASplit=0
                 LikesOthersAgent(neighborhood,typeA,preference,(x,y))
             elif pick <= typeASplit + typeBSplit:
                 LikesOthersAgent(neighborhood,typeB,preference,(x,y))
-    return neighborhood
-
-def moveimprove():
-    n = likesSameNeighborhood(100)
-    print 'running unhappy'
-    print timeit.timeit(stmt=n.run,number=10)
+    return neighborhood 
   
         
 class testagents(unittest.TestCase):
