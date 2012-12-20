@@ -27,6 +27,8 @@ Design Decisions:
 from random import sample
 from random import uniform
 from random import seed
+from random import triangular
+from math   import floor
 import unittest
 import csv
 
@@ -209,29 +211,40 @@ def run(neighborhood,ticks):
         if stats[0] ==0.0: break
     return history
     
-class NeighborhoodFactory(object):
-    def simpleLikesSameNeighborhood(self,size,preference=0.4,typeA='X',typeB='O',typeASplit=0.5,typeBSplit=0.4):
-        if typeASplit + typeBSplit > 1.0: return 'Split values must add to 1.0.'     
-        neighborhood = Neighborhood(size)
-        for x in range(size):
-            for y in range(size):
-                pick = uniform(0,1)
-                if pick <= typeASplit:
-                    LikesSameAgent(neighborhood,typeA,preference,(x,y))
-                elif pick <= typeASplit + typeBSplit:
-                    LikesSameAgent(neighborhood,typeB,preference,(x,y))
-        return neighborhood  
-    def simpleLikesOthersNeighborhood(self,size,preference=0.4,typeA='X',typeB='O',typeASplit=0.5,typeBSplit=0.4):
-        if typeASplit + typeBSplit > 1.0: return 'Split values must add to 1.0.'     
-        neighborhood = Neighborhood(size)
-        for x in range(size):
-            for y in range(size):
-                pick = uniform(0,1)
-                if pick <= typeASplit:
-                    LikesOthersAgent(neighborhood,typeA,preference,(x,y))
-                elif pick <= typeASplit + typeBSplit:
-                    LikesOthersAgent(neighborhood,typeB,preference,(x,y))
-        return neighborhood 
+
+def ageNeighborhood(size,populatedpercent=.95,preference=0.3,averageage=45,minage=20,maxage=90):
+    neighborhood = Neighborhood(size)
+    for x in range(size):
+        for y in range(size):
+            pick = uniform(0,1)
+            if pick < populatedpercent:
+                age = floor(triangular(minage,maxage,averageage))
+                agent= ContinuousLikesSameAgent(neighborhood,age,age-5,age+5,preference,(x,y))
+    return neighborhood
+                                              
+def likesSameNeighborhood(size,preference=0.4,typeA='X',typeB='O',typeASplit=0.5,typeBSplit=0.4):
+    if typeASplit + typeBSplit > 1.0: return 'Split values must add to 1.0.'     
+    neighborhood = Neighborhood(size)
+    for x in range(size):
+        for y in range(size):
+            pick = uniform(0,1)
+            if pick <= typeASplit:
+                LikesSameAgent(neighborhood,typeA,preference,(x,y))
+            elif pick <= typeASplit + typeBSplit:
+                LikesSameAgent(neighborhood,typeB,preference,(x,y))
+    return neighborhood
+
+def likesOthersNeighborhood(size,preference=0.4,typeA='X',typeB='O',typeASplit=0.5,typeBSplit=0.4):
+    if typeASplit + typeBSplit > 1.0: return 'Split values must add to 1.0.'     
+    neighborhood = Neighborhood(size)
+    for x in range(size):
+        for y in range(size):
+            pick = uniform(0,1)
+            if pick <= typeASplit:
+                LikesOthersAgent(neighborhood,typeA,preference,(x,y))
+            elif pick <= typeASplit + typeBSplit:
+                LikesOthersAgent(neighborhood,typeB,preference,(x,y))
+    return neighborhood 
   
         
 class testagents(unittest.TestCase):
