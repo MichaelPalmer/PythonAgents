@@ -8,7 +8,7 @@ SchellingSegregationModel
 A Python implementation of a Schelling Segregation Model for exploring 
 self-segregation of groups on the basis of race, religion, language, etc. 
 
-Based on:
+Based on the segregation model presented in:
 MicroMotives and MacroBehavior
 Thomas C. Schelling
 W.W. Norton, New York, 2006
@@ -20,6 +20,29 @@ Design Decisions:
    
 2. Unlike MicroMotives and MacroBehavior an agent is allowed to trade places 
    with another unhappy agent as well as move to an empty lot.
+   
+3. The run function will exit early if a step is reached where no agent 
+   is unhappy.
+   
+Usage Steps:
+1. Build a neighborhood
+2. Run the experiment for a selected number of cycles
+
+Example (using factory functions to build the neighborhood):
+
+The example builds a neighborhood of randomly assign X's and O's who
+have minimum preferences for what their neighborhood looks like.
+The model is asked to run for 30 ticks. At the start of the first
+tick the unhappiness was at 28% with 51% similar neighborhoods. 
+At the start of turn 22 the unhappiness was 0 with 86% similar 
+neighborhoods.
+
+>>> n = likesSameNeighborhood(50)
+>>> r = run(n,30)
+>>> r[0]
+(0, (0.2839451570101725, 0.5140061162079511))
+>>> r[len(r) -1]
+(22, (0.0, 0.8582235236700829))
 
 
 '''
@@ -38,6 +61,11 @@ EMPTYLOT = 'Empty'
 X_COORDINATE = 0
 Y_COORDINATE = 1
 
+"""
+SchellingAgent
+
+Ancestor Class for all the Schelling Agents in the module.
+"""
 class SchellingAgent(object):
     def __init__(self,neighborhood,mytype,percentpreference = 0.0,coordinates=None,view_radius = 1):
         
@@ -178,7 +206,7 @@ class Neighborhood(object):
         return (percent_unhappy,percent_similar)
     def move(self):
         unhappy_agents = self.getUnhappyAgents()
-        empty_lots     = [y for x in self.lots for y in x if y.mytype == EMPTYLOT]
+        empty_lots     = [lot for row in self.lots for lot in row if lot.mytype == EMPTYLOT]
         places_to_move = []
         places_to_move.extend(unhappy_agents)
         places_to_move.extend(empty_lots)
