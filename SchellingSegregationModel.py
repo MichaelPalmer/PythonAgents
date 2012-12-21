@@ -233,8 +233,22 @@ class EmptyLot(SchellingAgent):
     """
     def info(self):
         return 'Empty lot at %s,%s.'%(self.x,self.y)
-        
-class LikesSameAgent(SchellingAgent):    
+
+"""
+LikesSameAgent
+
+A discrete Schelling Agent that likes to have a percentage of the neighbors be of the same type as the agent.
+
+"""     
+class LikesSameAgent(SchellingAgent):   
+    """
+    method: isUnhappy
+
+    Look at the neighbors and return True if too few neighbors are of the same type
+
+    Return:
+    Boolean  True - agent is unhappy with the neighborhood  False - agent is content    
+    """
     def isUnhappy(self):
         neighbors = self.getNeighbors()
         if neighbors==[]: return False
@@ -242,23 +256,53 @@ class LikesSameAgent(SchellingAgent):
         if likeme < self.preference:
             return True
         return False
+    """
+    method: info
+
+    provides a nice source of debugging info about the agent
+
+    Return:
+    String   A string with important information about the current state of the agent.
+    """        
     def info(self):
         return 'Likes Same Agent Type %s Preference %s at %s,%s.'%(self.mytype,self.preference,self.x,self.y)
 
-class LikesOthersAgent(SchellingAgent):     
+"""
+LikesOthersAgent
+
+A discrete Schelling Agent that likes to have a percentage of the neighbors be of a different type from the agent.
+
+"""  
+class LikesOthersAgent(SchellingAgent):
+    """
+    method: isUnhappy
+
+    Look at the neighbors and return True if too many neighbors are of the same type
+
+    Return:
+    Boolean  True - agent is unhappy with the neighborhood  False - agent is content    
+    """
     def isUnhappy(self):
         neighbors = self.getNeighbors()
         if neighbors==[]: return False       
         others_percent = 1.0 - self.percentSame(neighbors)
         if others_percent < self.preference:
             return True
-        return False   
+        return False
+    """
+    method: info
+
+    provides a nice source of debugging info about the agent
+
+    Return:
+    String   A string with important information about the current state of the agent.
+    """    
     def info(self):
         return 'Likes Other Agent Type %s Preference %s at %s,%s.'%(self.mytype,self.preference,self.x,self.y) 
     
 class ContinuousSchellingAgent(SchellingAgent):
-    def __init__(self,neighborhood,mytype,minrange,maxrange,percentpreference = 0.0,coordinates=None,view_radius = 1):
-        super(ContinuousSchellingAgent,self).__init__(neighborhood,mytype,percentpreference,coordinates,view_radius)
+    def __init__(self,neighborhood,mytype,minrange,maxrange,percentPreference = 0.0,coordinates=None,viewRadius = 1):
+        super(ContinuousSchellingAgent,self).__init__(neighborhood,mytype,percentPreference,coordinates,viewRadius)
         self.minrange = minrange
         self.maxrange = maxrange
     def isMyType(self,neighbor): 
