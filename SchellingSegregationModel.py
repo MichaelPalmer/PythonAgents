@@ -65,18 +65,39 @@ Y_COORDINATE = 1
 """
 SchellingAgent
 
-Ancestor Class for all the Schelling Agents in the module.
+Ancestor Class for all the Schelling Agents in the module. ScheliingAgent is meant to be
+an ancestor class, it should not be instantiated directly.
 """
 class SchellingAgent(object):
-    def __init__(self,neighborhood,mytype,percentpreference = 0.0,coordinates=None,view_radius = 1):
+    """
+    method: __init__
+
+    Initialize the attributes of the Schelling Agent
+          
+    Arguments:
+    neighborhood          An initialized neighborhood where the agent will 'live'
+    mytype                A value representing an attribute of the agent - could be race,age,religion,language,etc.
+    percentpreference     The percentage of neighbors that the agent would like to see around them with the 'right' traits
+    coordinates           The x and y coordinates to place the agent on the grid
+    viewRadius           The radius of the neighborhood the agent uses to determine their neighbors.
+                          A radius of one implies 8 neighbors
+    """
+    def __init__(self,neighborhood,mytype,percentpreference = 0.0,coordinates=None,viewRadius = 1):
         
         self.neighborhood   = neighborhood
         self.mytype         = mytype
         self.preference     = percentpreference
-        self.neighbor_radius= view_radius
+        self.neighborRadius= viewRadius
         self.setCoordinates(coordinates)
-        
+    """
+    method: setCoordinates
 
+    logic to deal with setting coordinates of the agent - absense of coordinates implies
+    that the coordinates will be set with external code
+
+    Arguments:
+    coordinates              coordinates to use to position the agent
+    """
     def setCoordinates(self,coordinates):        
         if coordinates != None:
             self.x = coordinates[X_COORDINATE]
@@ -85,46 +106,131 @@ class SchellingAgent(object):
         else:
             self.x              = 0
             self.y              = 0     
-            
-    def isMyType(self,neighbor):
-        
+
+    """
+    method: isMyType
+
+    The logic that determines if a neighbor is the 'same' as mee.
+    The code here will work for many discrete variable cases (race,sex,religion, etc.)
+    Any special case logic will need to override this code.
+
+    Arguments:
+    neighbor           the neighboring agent that is being evaluated
+    Return:
+    Boolean            True = neighbor is like me  False = neighbor is not like me
+    """
+    def isMyType(self,neighbor):        
         if neighbor.mytype == self.mytype: return True
         return False
-               
+    """
+    method: getNeighbors
+
+    Get my neighborhood from the neighborhood object and subtract empty lots
+    and the current agent
+
+    Return:
+    List of Neighbors
+    """
     def getNeighbors(self):
-        adjoining_lots = self.neighborhood.getNeighborhood(self.x,self.y,self.neighbor_radius)
+        adjoining_lots = self.neighborhood.getNeighborhood(self.x,self.y,self.neighborRadius)
         real_neighbors = [lot for row in adjoining_lots for lot in row  if lot.mytype!=EMPTYLOT and lot!=self]
         return real_neighbors
-    
+
+    """
+    method: getSameNeighbors
+
+    Look at my neighbors and return the ones that are 'like' me.
+
+    Arguments:
+    neighbors   - Optional list of neighbors, will be retrieved if missing
+    Return:
+    List of neighbors that are like me
+    """
     def getSameNeighbors(self,neighbors = None):
         if neighbors ==None: neighbors = self.getNeighbors()
         same_neighbors = [neighbor  for neighbor in neighbors if self.isMyType(neighbor)==True]
         return same_neighbors
+    """
+    method: countNeighbors
 
+    A convenience method to return the total number of neighbors and the neighbors that are the same
+
+    Return:
+    Tuple  Position 0 = Count of Same Neighbors
+           Position 1 = Count of All Neighbors
+    """
     def countNeighbors(self):
         neighbors     = self.getNeighbors()
         sameNeighbors = self.getSameNeighbors(neighbors)
         return (len(sameNeighbors),len(neighbors))
-    
+    """
+    method: percentSame
+
+    Calculate the percentage of the neighbors who are like me
+
+    Return:
+    float between 0 and 1.0 Percentage of like neighbors
+    """  
     def percentSame(self,neighbors = None):
-        if neighbors == None: neighbors = self.getNeighbors()
-        # getNeighbors returns nothing when the agent is surrounded by empty lots
-        if len(neighbors)==0: return 0.0
+        if neighbors == None:
+            neighbors = self.getNeighbors()
+        #getNeighbors returns nothing when the agent is surrounded by empty lots
+        if len(neighbors)==0:
+            return 0.0
         numbersame = len(self.getSameNeighbors(neighbors))
         percent = numbersame / (len(neighbors) * 1.0)
         return percent        
-    
+
+    """
+    method: isUnhappy
+
+    Evaluate the neighbors and figure out if the agent is unhappy and wants to move.
+
+    ***Should be overridden by an implementing class***
+
+    Return:
+    Boolean   True = Unhappy wants to move  False = is OK where they are
+    """
     def isUnhappy(self):
         return False
-    
+    """
+    method: __repr__
+
+    Return a fair shorthand version of the agent.
+    Uses repr() for cases where the primary attribute is a number or other non-string.
+
+    Return:
+    string representing the agent
+    """
     def __repr__(self):
         return repr(self.mytype)
 
+"""
+EmptyLot
+
+An empty lot is treated as a pseudo-agent.
+The idea is to have the empty lot be use a null object pattern.
+
+"""
 class EmptyLot(SchellingAgent):
-    def __init__(self,neighborhood,coordinates):
-        super(EmptyLot,self).__init__(neighborhood,EMPTYLOT)
-        self.x = coordinates[X_COORDINATE]
-        self.y = coordinates[Y_COORDINATE]
+    """
+    method: __init__
+
+    Overrides coordinate setup, already exists as part of the landscape
+    
+    """
+    def __init__(self,myneighborhood,coords):
+        super(EmptyLot,self).__init__(neighborhood=myneighborhood,mytype=EMPTYLOT)
+        self.x = coords[X_COORDINATE]
+        self.y = coords[Y_COORDINATE]
+    """
+    method: info
+
+    provides a nice source of debugging info about the agent
+
+    Return:
+    String   A string with important information about the current state of the agent.
+    """
     def info(self):
         return 'Empty lot at %s,%s.'%(self.x,self.y)
         
