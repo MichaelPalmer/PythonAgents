@@ -28,22 +28,25 @@ Usage Steps:
 1. Build a neighborhood
 2. Run the experiment for a selected number of cycles
 
-Example (using factory functions to build the neighborhood):
+Important Classes:
 
-The example builds a neighborhood of randomly assign X's and O's who
-have minimum preferences for what their neighborhood looks like.
-The model is asked to run for 30 ticks. At the start of the first
-tick the unhappiness was at 28% with 51% similar neighborhoods. 
-At the start of turn 22 the unhappiness was 0 with 86% similar 
-neighborhoods.
+SchellingAgent           : The ancestor agent class for all Schelling agents. 
+ContinuousSchellingAgent : The ancestor agent class for Schelling agents with continuous variables.
+                           Inherits from Schelling Agent.
+Neighborhood             : The class containing the methods and attributes for the agent neighborhood.
+EmptyLot                 : A null object agent that represents an empty lot in the neighborhood.
 
->>> n = likesSameNeighborhood(50)
->>> r = run(n,30)
->>> r[0]
-(0, (0.2839451570101725, 0.5140061162079511))
->>> r[len(r) -1]
-(22, (0.0, 0.8582235236700829))
+Example:
 
+The demo() function shows a complete run of a discrete Schelling Model where all agents have a similar agent preference.
+The model moves from a time tick of 0 with .26 unhappiness and .52 neighborhood similarity to a time tick of 10 with
+0 unhappiness and a neighborhood similarity of 0.84.
+
+>>> demo()
+[(0, (0.2861111111111111, 0.5220417633410673)), (1, (0.175, 0.6283731688511951)), (2, (0.08055555555555556, 0.7364341085271318)), (3, (0.05, 0.7770897832817337)),
+(4, (0.03611111111111111, 0.8078703703703703)), (5, (0.013888888888888888, 0.8294573643410853)), (6, (0.011111111111111112, 0.8303777949113339)),
+(7, (0.005555555555555556, 0.8386100386100386)), (8, (0.002777777777777778, 0.8410852713178295)), (9, (0.002777777777777778, 0.8383604021655066)),
+(10, (0.0, 0.8428792569659442))]
 
 '''
 
@@ -299,45 +302,158 @@ class LikesOthersAgent(SchellingAgent):
     """    
     def info(self):
         return 'Likes Other Agent Type %s Preference %s at %s,%s.'%(self.mytype,self.preference,self.x,self.y) 
-    
+"""
+ContinuousSchellingAgent
+
+An ancestor class for Schelling agents working on continuous variables like age and income.
+This class is meant to be subclassed for use.
+
+"""
 class ContinuousSchellingAgent(SchellingAgent):
+    """
+    method: __init__
+
+    Arguments:
+    See <SchellinAgent> for most of theese
+    minrange     a new argument for the ContinuousSchellingAgent that defines the bottom of a similar agent range.
+    maxrange     a new argument for the ContinuousSchellingAgent that defines the top of a similar agent range.
+    """
     def __init__(self,neighborhood,mytype,minrange,maxrange,percentPreference = 0.0,coordinates=None,viewRadius = 1):
         super(ContinuousSchellingAgent,self).__init__(neighborhood,mytype,percentPreference,coordinates,viewRadius)
         self.minrange = minrange
         self.maxrange = maxrange
+    """
+    method: isMyType
+
+    Defines a similarity argument for continuous variables based on a range.
+
+    Arguments:
+    neighbor      a neighbor agent to be compared with the current agent
+
+    Returns:
+    Boolean    True -- Agent is like me     False -- Agent is not like me
+    """
     def isMyType(self,neighbor): 
         if neighbor.mytype >= self.minrange and neighbor.mytype <= self.maxrange: return True
         return False
-    
+"""
+ContinuousLikesSameAgent
+
+Defines a continuous Schelling agent that prefers agents like itself.
+
+"""
 class ContinuousLikesSameAgent(ContinuousSchellingAgent):
+    """
+    method: isUnhappy
+
+    Look at the neighbors and return True if too few neighbors are of the same type
+
+    Return:
+    Boolean  True - agent is unhappy with the neighborhood  False - agent is content    
+    """    
     def isUnhappy(self):
         neighbors = self.getNeighbors()
         if neighbors==[]: return False
         likeme = self.percentSame(neighbors)
         if likeme < self.preference:
             return True
-        return False    
-    
+        return False
+    """
+    method: info
+
+    provides a nice source of debugging info about the agent
+
+    Return:
+    String   A string with important information about the current state of the agent.
+    """        
+    def info(self):
+        return 'Continuous Likes Same Agent  Type %s Attribute %s Minrange %s, Maxrange %s at %s,%s.'%(self.mytype,self.preference,self.minrange,self.maxrange,self.x,self.y)    
+
+"""
+ContinuousLikesOtherAgent
+
+Defines a continuous Schelling agent that prefers agents not like itself.
+
+"""    
 class ContinuousLikesOtherAgent(ContinuousSchellingAgent):
+    """
+    method: isUnhappy
+
+    Look at the neighbors and return True if too many neighbors are of the same type
+
+    Return:
+    Boolean  True - agent is unhappy with the neighborhood  False - agent is content    
+    """    
     def isUnhappy(self):
         neighbors = self.getNeighbors()
         if neighbors==[]: return False       
         others_percent = 1.0 - self.percentSame(neighbors)
         if others_percent < self.preference:
             return True
-        return False     
-        
+        return False
+    """
+    method: info
+
+    provides a nice source of debugging info about the agent
+
+    Return:
+    String   A string with important information about the current state of the agent.
+    """        
+    def info(self):
+        return 'Continuous Likes Other Agents  Type %s Attribute %s Minrange %s, Maxrange %s at %s,%s.'%(self.mytype,self.preference,self.minrange,self.maxrange,self.x,self.y)        
+
+"""
+Neighborhood
+
+Defines the methods and data for the agent neighborhood. This is always a torus - the grid wraps East to West and North to South.
+"""
 class Neighborhood(object):
+    """
+    method: __init__
+
+    Define a torus neighborhood of dimension length and width
+    Arguments:
+    dimension           the size of one 'side' of the neighborhood
+    Object Attributes:
+    self.dimension      the length and width of the neighborhood
+    self.lots           the grid that stores the neighborhood
+    self.agents         the list of agents in the neighborhood
+    self.unhappyagents  cache for the list of unhappy agents
+    self.runOnce        indicator if moves have been performed at least once
+    """
     def __init__(self,dimension):
         self.dimension = dimension 
         self.lots      = [[EmptyLot(self,(x,y)) for y in range(self.dimension)] for x in range(self.dimension)]
         self.agents    = []
         self.unhappyagents = []
         self.runOnce   = False
+    """
+    method: wrap
+
+    Adjust the incoming coordinate to account for being on a torus
+
+    Argument:
+    x      a coordginate to wrap around the torus
+    Return:
+    int   adjusted coordinate value    
+    """
     def wrap(self,x):
         if x<0: return(self.dimension+x)
         if x>self.dimension-1: return(x-self.dimension)
         return x
+    """
+    method: getNeighborhood
+
+    Get the visible neighborhood at a point in the grid
+
+    Arguments:
+    x       x coordinate on the neighborhood grid
+    y       y coordinate on the neighborhood grid
+    radius  number of lots arround the coordiante to pull for the neighborhood
+
+    Returns:
+    List    a list of lots that make up a neighborhood
+    """
     def getNeighborhood(self,x,y,radius):
         neighbors=[]
         x_range = [self.wrap(i) for i in range(x - radius, x + radius +1)]
@@ -350,38 +466,94 @@ class Neighborhood(object):
             neighbors.append(row)
 
         return neighbors
+    """
+    method: putAgent
+
+    Add an agent to the neighborhood grid
+
+    Argument:
+    agent      agent to add to the grid
+    """
     def putAgent(self,agent):
         self.agents.append(agent)
         self.lots[agent.x][agent.y] = agent
+    """
+    method: getUnhappyAgents
+
+    Return a list of agents in the neighborhood that say they are unhappy
+
+    Return:
+    List   a list of unhappy agents
+    """
     def getUnhappyAgents(self):
         self.unhappyagents = [agent for agent in self.agents if agent.isUnhappy() == True]
         return self.unhappyagents
+    """
+    method: percentUnhappy
+
+    Returns a measurement of total neighborhood unhappiness. Uses a cached list of unhappy agents if available.
+
+    Return:
+    float   a representation of neighborhood unhappiness 0.0 - 1.0
+    """
     def percentUnhappy(self):
         if self.runOnce:
            totalUnhappy = len(self.unhappyagents)
         else:
            totalUnhappy = len(self.getUnhappyAgents())
         return totalUnhappy / (len(self.agents) *1.0)
+    """
+    method: percentSimilar
+
+    A representation of the similarity of the neighborhoods of the agents
+
+    Return:
+    float  a representation of agent neighborhood similarity 0.0-1.0
+    """
     def percentSimilar(self):
-        neighborData = [ x.countNeighbors() for x in self.agents]
+        neighborData = [ agent.countNeighbors() for agent in self.agents]
         similar_neighbors = sum([x[0] for x in neighborData]) 
         total_neighbors   = sum([x[1] for x in neighborData])
-        return similar_neighbors / (total_neighbors *1.0)        
+        return similar_neighbors / (total_neighbors *1.0)
+    """
+    method: getStats
+
+    A convenience method to get the stats for the neighborhood
+
+    Return:
+    tuple  0 = percent of unahppy agents   1 = agent neighborhood similarity
+    """
     def getStats(self):
         percent_unhappy   = self.percentUnhappy()
         percent_similar   = self.percentSimilar()
         return (percent_unhappy,percent_similar)
+    """
+    method: move
+
+    Get the unhappy agents and empty lots and start moving agents around.   
+    """
     def move(self):
+        #build the list of moveable parts
         unhappy_agents = self.getUnhappyAgents()
         empty_lots     = [lot for row in self.lots for lot in row if lot.mytype == EMPTYLOT]
         places_to_move = []
         places_to_move.extend(unhappy_agents)
         places_to_move.extend(empty_lots)
+        #start swapping two by two at random
         while (len(places_to_move)>=2):
             movers = sample(places_to_move,2)
             places_to_move.remove(movers[0])
             places_to_move.remove(movers[1])
             self.swap(movers[0],movers[1])
+    """
+    method: swap
+
+    Swap the positions of two agents in the grid.
+
+    Arguments:
+    agent1      an agent to move
+    agent2      another agent to move
+    """
     def swap(self,agent1,agent2):
         x1,y1 = agent1.x,agent1.y
         agent1.x = agent2.x
@@ -390,21 +562,58 @@ class Neighborhood(object):
         agent2.y = y1
         self.lots[agent1.x][agent1.y] = agent1
         self.lots[agent2.x][agent2.y] = agent2
+    """
+    method: writeToCSV
+
+    A helper method to save/visualize the state of the grid
+
+    Argument:
+    filename     name for the output csv file   
+    """
     def writeToCSV(self,filename = 'testSchelling.csv'):
         outputFile = open(filename,'wb')
         csvWriter = csv.writer(outputFile)
         csvWriter.writerows(self.lots)
         outputFile.close()
-    def run(self,ticks=30):
-        history = []
-        for tick in range(ticks):
-            stats = self.getStats()
-            history.append((tick,stats))
-            self.move()
-            if stats[0] ==0.0: break
-        return history
-    
 
+
+
+"""
+ Function: run
+
+ A heartbeat function to run the Schelling models.
+ Accumulates stat history and will stop early if
+ unhappiness is eliminated.
+
+Arguments:
+neighborhood    the instantiated Schelling neighborhood
+ticks           how many clock cycles to run the model  
+"""
+def run(neighborhood,ticks=30):
+    history = []
+    for tick in range(ticks):
+        stats = neighborhood.getStats()
+        history.append((tick,stats))
+        neighborhood.move()
+        if stats[0] ==0.0: break
+    return history
+    
+"""
+   Function: ageNeighborhood
+
+   A helper function to build a continous Schelling model based on age segregation.
+
+   Arguments:
+   size               dimension of the Schelling neighborhood
+   populatedpercent   what percentage of the lots will contain agents as opposed to empty lots
+   preference         percentage of neighbors that need to be like
+   averageage         median age for the neighborhood
+   minage             minimum age for the neighborhood
+   maxage             maximum age for the neighborhood
+
+   Return:
+   Neighborhood       An instantiated Schelling Neighborhood
+"""
 def ageNeighborhood(size,populatedpercent=.95,preference=0.3,averageage=45,minage=20,maxage=90):
     neighborhood = Neighborhood(size)
     for x in range(size):
@@ -414,7 +623,24 @@ def ageNeighborhood(size,populatedpercent=.95,preference=0.3,averageage=45,minag
                 age = floor(triangular(minage,maxage,averageage))
                 agent= ContinuousLikesSameAgent(neighborhood,age,age-5,age+5,preference,(x,y))
     return neighborhood
-                                              
+
+
+"""
+  Function: likesSameNeighborhood
+
+  A helper function to build a discrete Schelling Model based on attraction of similar agents
+
+  Arguments:
+  size                  dimension of the Schelling neighborhood
+  preference            the preference for similar agents 
+  typeA                 the type of typeA agents
+  typeB                 the type of typeB agents
+  typeASplit            the percentage of typeA agents
+  typeBSplit            the percentage of typeB agents
+
+  Return:
+  Neighborhood     An instantiated Schelling Neighborhood
+"""
 def likesSameNeighborhood(size,preference=0.4,typeA='X',typeB='O',typeASplit=0.5,typeBSplit=0.4):
     if typeASplit + typeBSplit > 1.0: return 'Split values must add to 1.0.'     
     neighborhood = Neighborhood(size)
@@ -427,6 +653,22 @@ def likesSameNeighborhood(size,preference=0.4,typeA='X',typeB='O',typeASplit=0.5
                 LikesSameAgent(neighborhood,typeB,preference,(x,y))
     return neighborhood
 
+"""
+  Function: likesOthersNeighborhood(
+
+  A helper function to build a discrete Schelling Model based on attraction of differant agents
+
+  Arguments:
+  size                  dimension of the Schelling neighborhood
+  preference            the preference for similar agents 
+  typeA                 the type of typeA agents
+  typeB                 the type of typeB agents
+  typeASplit            the percentage of typeA agents
+  typeBSplit            the percentage of typeB agents
+
+  Return:
+  Neighborhood     An instantiated Schelling Neighborhood
+"""
 def likesOthersNeighborhood(size,preference=0.4,typeA='X',typeB='O',typeASplit=0.5,typeBSplit=0.4):
     if typeASplit + typeBSplit > 1.0: return 'Split values must add to 1.0.'     
     neighborhood = Neighborhood(size)
@@ -439,11 +681,24 @@ def likesOthersNeighborhood(size,preference=0.4,typeA='X',typeB='O',typeASplit=0
                 LikesOthersAgent(neighborhood,typeB,preference,(x,y))
     return neighborhood
 
-def moveimprove():
-    n = likesSameNeighborhood(100)
-    a = n.agents[0]
-    print timeit.timeit(stmt = n.move,number = 1)
-        
+
+"""
+ Function: demo
+
+ Shows a sample of how to run and use the Schelling code.
+"""
+def demo(neighborhoodfunction=likesSameNeighborhood):
+    n = neighborhoodfunction(20)
+    n.writeToCSV('before.csv')
+    r = run(n)
+    n.writeToCSV('after.csv')
+    print r
+
+"""
+testagents
+
+Unit tests to keep the developer honest
+"""
 class testagents(unittest.TestCase):
     def getsuite(self):
         suite = unittest.TestSuite()  
@@ -562,6 +817,8 @@ class testagents(unittest.TestCase):
         self.assertEqual(s.isUnhappy(),False)
         self.assertEquals(s.x,0)
         self.assertEquals(s.y,1)
+        i = s.info()
+        self.assertTrue(i.startswith('Continuous'))
         
     def test_buildContinuousLikeOthers(self):
         n=Neighborhood(10)
@@ -571,6 +828,8 @@ class testagents(unittest.TestCase):
         self.assertEqual(s.maxrange,50)        
         self.assertEqual(s.preference,0.3)
         self.assertEqual(s.isUnhappy(),False)
+        i = s.info()
+        self.assertTrue(i.startswith('Continuous'))
         
     def test_continuouslikesameisunhappy(self):
         seed(1)
