@@ -524,8 +524,10 @@ class Neighborhood(object):
     tuple  0 = percent of unahppy agents   1 = agent neighborhood similarity
     """
     def getStats(self):
-        percent_unhappy   = self.percentUnhappy()
-        percent_similar   = self.percentSimilar()
+        #rounded to 4 places for easy readability
+        #2 places is too few to see some results
+        percent_unhappy   = round(self.percentUnhappy(),4)
+        percent_similar   = round(self.percentSimilar(),4)
         return (percent_unhappy,percent_similar)
     """
     method: move
@@ -641,7 +643,7 @@ def ageNeighborhood(size,populatedpercent=.95,preference=0.3,averageage=45,minag
   Return:
   Neighborhood     An instantiated Schelling Neighborhood
 """
-def likesSameNeighborhood(size,preference=0.4,typeA='X',typeB='O',typeASplit=0.5,typeBSplit=0.4):
+def likesSameNeighborhood(size,preference=0.3,typeA='X',typeB='O',typeASplit=0.5,typeBSplit=0.4):
     if typeASplit + typeBSplit > 1.0: return 'Split values must add to 1.0.'     
     neighborhood = Neighborhood(size)
     for x in range(size):
