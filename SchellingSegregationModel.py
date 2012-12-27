@@ -54,6 +54,7 @@ from random import sample
 from random import uniform
 from random import seed
 from random import triangular
+from random import normalvariate
 from math   import floor
 import unittest
 import csv
@@ -601,14 +602,14 @@ def run(neighborhood,ticks=30):
     return history
     
 """
-   Function: ageNeighborhood
+   Function: likesSameAgeNeighborhood
 
-   A helper function to build a continous Schelling model based on age segregation.
+   A helper function to build a continous Schelling model based on same age segregation.
 
    Arguments:
    size               dimension of the Schelling neighborhood
+   preference         percentage of neighbors that need to be like   
    populatedpercent   what percentage of the lots will contain agents as opposed to empty lots
-   preference         percentage of neighbors that need to be like
    averageage         median age for the neighborhood
    minage             minimum age for the neighborhood
    maxage             maximum age for the neighborhood
@@ -616,16 +617,50 @@ def run(neighborhood,ticks=30):
    Return:
    Neighborhood       An instantiated Schelling Neighborhood
 """
-def ageNeighborhood(size,populatedpercent=.95,preference=0.3,averageage=45,minage=20,maxage=90):
+def likesSameAgeNeighborhood(size,preference=0.3,populatedpercent=.95,averageage=45,minage=20,maxage=90):
     neighborhood = Neighborhood(size)
     for x in range(size):
         for y in range(size):
+            #decide if the lot will be populated
             pick = uniform(0,1)
             if pick < populatedpercent:
+                #produce a random age between minage and maxage
                 age = floor(triangular(minage,maxage,averageage))
+                age = int(age)
                 agent= ContinuousLikesSameAgent(neighborhood,age,age-5,age+5,preference,(x,y))
     return neighborhood
 
+
+"""
+   Function: likesOtherAgeNeighborhood
+
+   A helper function to build a continous Schelling model based on age diversity segregation.
+
+   Arguments:
+   size               dimension of the Schelling neighborhood
+   preference         percentage of neighbors that need to be different   
+   populatedpercent   what percentage of the lots will contain agents as opposed to empty lots
+   averageage         median age for the neighborhood
+   minage             minimum age for the neighborhood
+   maxage             maximum age for the neighborhood
+
+   Return:
+   Neighborhood       An instantiated Schelling Neighborhood
+"""
+def likesOtherAgeNeighborhood(size,preference=0.4,populatedpercent=.95,averageage=55,minage=20,maxage=95):
+    neighborhood = Neighborhood(size)
+    for x in range(size):
+        for y in range(size):
+            #decide if the lot will be populated
+            pick = uniform(0,1)
+            if pick < populatedpercent:
+                #produce a random age between minage and maxage
+                age = normalvariate(averageage,10)
+                if age < minage: age = minage
+                if age > maxage: age = maxage
+                age = int(age)
+                agent= ContinuousLikesOtherAgent(neighborhood,age,age-7,age+7,preference,(x,y))
+    return neighborhood
 
 """
   Function: likesSameNeighborhood
@@ -649,8 +684,10 @@ def likesSameNeighborhood(size,preference=0.3,typeA='X',typeB='O',typeASplit=0.5
     for x in range(size):
         for y in range(size):
             pick = uniform(0,1)
+            #decide if the lot will be typeA
             if pick <= typeASplit:
                 LikesSameAgent(neighborhood,typeA,preference,(x,y))
+            #decide if the lot will be typeB (anything leftover will be an EmptyLot)
             elif pick <= typeASplit + typeBSplit:
                 LikesSameAgent(neighborhood,typeB,preference,(x,y))
     return neighborhood
@@ -677,8 +714,10 @@ def likesOthersNeighborhood(size,preference=0.4,typeA='X',typeB='O',typeASplit=0
     for x in range(size):
         for y in range(size):
             pick = uniform(0,1)
+            #decide if the lot will be typeA
             if pick <= typeASplit:
                 LikesOthersAgent(neighborhood,typeA,preference,(x,y))
+            #decide if the lot will be typeB (anything leftover will be an EmptyLot)    
             elif pick <= typeASplit + typeBSplit:
                 LikesOthersAgent(neighborhood,typeB,preference,(x,y))
     return neighborhood
@@ -695,6 +734,7 @@ def demo(neighborhoodfunction=likesSameNeighborhood):
     r = run(n)
     n.writeToCSV('after.csv')
     print r
+    return r
 
 """
 testagents
@@ -716,6 +756,7 @@ class testagents(unittest.TestCase):
         suite.addTest(testagents('test_continuouslikesameisunhappy'))
         suite.addTest(testagents('test_continuouslikeotherisunhappy'))
         suite.addTest(testagents('test_continuoussmallmove'))
+        suite.addTest(testagents('test_demo'))        
 
         
         return suite
@@ -725,6 +766,17 @@ class testagents(unittest.TestCase):
         suite = self.getsuite()
         result = runner.run(suite)    
         return result
+
+    def test_demo(self):
+
+        results = demo(likesSameNeighborhood)
+        self.assertTrue(len(results)>0)
+        results = demo(likesOthersNeighborhood)
+        self.assertTrue(len(results)>0)
+        results = demo(likesOtherAgeNeighborhood)
+        self.assertTrue(len(results)>0)
+        results = demo(likesSameAgeNeighborhood)
+        self.assertTrue(len(results)>0)
     
     def test_buildNeighborhood(self):       
         n = Neighborhood(50)    
@@ -806,7 +858,7 @@ class testagents(unittest.TestCase):
         n.move() 
         after  =  n.getStats()
         self.assertEqual(len(n.agents),4)
-        self.assertEqual(after,(0.0,1/3.0))
+        self.assertEqual(after,(0.0,0.3333))
   
         
     def test_buildContinuousLikeSame(self):
