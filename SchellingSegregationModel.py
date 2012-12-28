@@ -734,7 +734,7 @@ def likesOthersNeighborhood(size,preference=0.4,typeA='X',typeB='O',typeASplit=0
 def demo(neighborhoodfunction=likesSameNeighborhood):
     n = neighborhoodfunction(20)
     n.writeToCSV('before.csv')
-    r = run(n)
+    r = run(n,20)
     n.writeToCSV('after.csv')
     print r
     return r
