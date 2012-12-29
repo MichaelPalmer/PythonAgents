@@ -61,7 +61,7 @@ import csv
 import timeit
 
 
-EMPTYLOT = 'Empty'
+EMPTYLOT = '-'
 
 X_COORDINATE = 0
 Y_COORDINATE = 1
@@ -591,17 +591,18 @@ class Neighborhood(object):
 Arguments:
 neighborhood    the instantiated Schelling neighborhood
 ticks           how many clock cycles to run the model
-saveCSVs        a boolean to indicate if CSV files for every step should be saved
+saveCSVs        a boolean to indicate if CSV files for the start and stop step should be saved
                 mostly useful for debugging
 """
 def run(neighborhood,ticks=30,saveCSVs=False):
     history = []
+    if saveCSVs:neighborhood.writeToCSV('SchellingBefore.csv')
     for tick in range(ticks):
         stats = neighborhood.getStats()
         history.append((tick,stats))
-        if saveCSVs:neighborhood.writeToCSV('Schelling'+repr(tick)+'.csv')
         neighborhood.move()
         if stats[0] ==0.0: break
+    if saveCSVs:neighborhood.writeToCSV('SchellingAfter.csv')
     return history
     
 """
@@ -733,9 +734,7 @@ def likesOthersNeighborhood(size,preference=0.4,typeA='X',typeB='O',typeASplit=0
 """
 def demo(neighborhoodfunction=likesSameNeighborhood):
     n = neighborhoodfunction(20)
-    n.writeToCSV('before.csv')
-    r = run(n,20)
-    n.writeToCSV('after.csv')
+    r = run(n,20,True)
     print r
     return r
 
