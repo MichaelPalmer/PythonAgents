@@ -29,7 +29,7 @@ A Schelling model consists of people or households in a neighborhood. Each perso
 [[Figure1]]*Figure 1 Sample Neighborhood*
 
 
-For the example neighborhood in *Figure 1 Sample Neighborhood* the central X has eight neighbors with two X\'s and six O\'s.  If the center X has a preference for having neighbors like itself of .25 or less it will be happy otherwise it will want to move. The O in the lower right hand corner of the populated area has three neighbors, 2 O\'s and an X and has a similar neighbor score of 2/3 even though it is also adjacent to five empty lots. 
+For the example neighborhood in <<Figure1>> the central X has eight neighbors with two X\'s and six O\'s.  If the center X has a preference for having neighbors like itself of .25 or less it will be happy otherwise it will want to move. The O in the lower right hand corner of the populated area has three neighbors, 2 O\'s and an X and has a similar neighbor score of 2/3 even though it is also adjacent to five empty lots. 
 
 The cycle of the Schelling model is as follows:
 
@@ -52,10 +52,54 @@ A critical part of the model is the Neighborhood class which contains the grid o
 |=========
 [[Figure2]]*Figure 2 Doughnut World Coordinates*
 
-In *Figure 2 Doughnut World Coordinates* the neighbors of the cell at coordinates (1,2) are (0,1),(1,1),(2,1),(0,2),(2,2),(0,0),(1,0) and (2,0).
+In <<Figure2>> the neighbors of the cell at coordinates (1,2) are (0,1),(1,1),(2,1),(0,2),(2,2),(0,0),(1,0) and (2,0).
 
 The people in the neighborhood are represented by classes descended from the SchellingAgent class.   The base SchellingAgent is designed as an ancestor class for representing segregation on discrete variables like race or gender.  The LikesSameAgent class represents a person who wants at least a minimal level of similar neighbors with a discrete attribute like race.  The LikesOthersAgent likes a neighborhood with at least minimal level of neighbors with a discrete attribute that is not the same as itself.  The ContinuousSchellingAgent class inherits from the SchellingAgent class to add support for calculating similarity for continuous attributes like age and income.  The assumption for continuous variables is that similarity does not need to be exact, close will do.  The ContinuousLikesSameAgent and ContinuousLikesOtherAgent are the continuous attribute equivalents of the LikesSameAgent and LikesOtherAgent classes.
 
 In order to use the code in SchellingSegregationModel to model you need a populated neighborhood to feed to the run() function.  There are four neighborhood population helper functions supplied with the model: likesSameNeighborhood, likesOthersNeighborhood,  likesOtherAgeNeighborhood, and likesSameAgeNeighborhood. 
 
+
+=== Discrimination Drive v. Acceptance Alley ===
+
 A quick introduction to the model code is provided in the function demo(). By default demo builds a segregation model using the likesSameNeighborhood helper function to populate a neighborhood with X\'s and O\'s who have a preference for similar neighbors in a grid of 400 squares. The demo people would like to have .3 of their neighbor the same as themselves.
+
+It is instructive to compare the results of a lightly discriminating neighborhood against a neighborhood that demands diversity.
+
+The default demo function looks at a lightly discriminatory neighborhood where each agent is prepared to have up to 2/3 of its neighbors be differant. 
+
+.Example1 Discrimination Demo Run
+>>> import SchellingSegregationModel
+
+>>> demo()
+
+...................................
+[(0, (0.192, 0.4881)), (1, (0.0774, 0.6012)), (2, (0.0458, 0.6482)), (3, (0.0287, 0.676)), (4, (0.0143, 0.696)), (5, (0.0115, 0.705)),
+ (6, (0.0115, 0.7123)), (7, (0.0, 0.719))]
+...................................
+
+image::DiscriminationGraph.png[Light Discrimination Graph]
+*Example1 Discrimination Change Over Time*
+
+The demo() function code returns statistics for each turn on neighborhood unhappiness and neighborhood similarity. So on turn 0 of the code run in Example1 the neighborhood was 19% unhappy and the aggregate similarity was 49%.  By the end of the run the neighborhood unhappiness was at 0% and the local similarity was at 72%. The demo function will also save the before and after run states of the neighborhood to CSV files. 
+
+The demo function can also be run with one of the other helper functions for example, likesOthersNeghborhood. In the example run shown in Example 2 it is possible to see how the percentage of similar neighbors went down as time progressed. 
+
+.Example2 Acceptance Demo Run
+>>> import SchellingSegregationModel
+
+>>> demo(likesOthersNeighborhood)
+
+...................................
+[(0, (0.3492, 0.5133)), (1, (0.1844, 0.4465)), (2, (0.1061, 0.4073)), (3, (0.0922, 0.3991)), (4, (0.0922, 0.3992)), (5, (0.095, 0.3986)), 
+(6, (0.1006, 0.3953)), (7, (0.0754, 0.3878)), (8, (0.0782, 0.3866)), (9, (0.081, 0.3873)), (10, (0.067, 0.3815)), (11, (0.0782, 0.3822)),
+ (12, (0.0782, 0.38)), (13, (0.0726, 0.3821)), (14, (0.0642, 0.3805)), (15, (0.0782, 0.3804)), (16, (0.0698, 0.3812)), (17, (0.0587, 0.3775)), 
+(18, (0.0726, 0.3796)), (19, (0.067, 0.3814))]
+...................................
+
+image::DiscriminationGraph.png[Accpeting Neighborhood Graph]
+*Example2 Accepting Neighborhood Change Over Time*
+
+It is interesting to note ni the results of the two runs how light discrimination can lead to a highly segregated neighborhood but that even a neighborhood that seeks out diversity can take time to move to a more diverse structure.
+
+=== Seperation Street ===
+
