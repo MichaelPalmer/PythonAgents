@@ -1,0 +1,61 @@
+= The Schelling Segregation Model =
+
+
+== Modeling Human Behavior ==
+
+Simulating human behavior can be complicated.  People have individual needs, wants and preferences that form the goals they pursue throughout their lives.  People do not pursue their goals in isolation; they compete and cooperate with other people in their families, work, school and community. 
+
+Attempts to simplify the problem of representing human behavior by using aggregate mathematical equations or statistical populations of individuals have been shown to miss important properties of real world behavior. footnote:[Micromotives and Macrobehavior pg. 14] footnote:[Simulation for the Social Scientist pgs. 50-54] footnote:[Simulation for the Social Scientist pgs. 101-102] The problem of building a model of human behavior has to encompass both the individual decisions and the environment which is created by and reacts to those decisions. 
+
+One of the earliest researchers to tackle the problem of systematically modeling the interaction of individual choices with a larger environment is the Nobel Prize winning economist Thomas C. Shelling.   Schelling has a number of interesting accomplishments to his name, but what interests us here is his segregation model.
+
+Schelling built his original segregation model to understand the problem of racial segregation in the United States, but he later expanded the model to cover other types of segregation including gender, language, age and income. 
+
+== Schelling Segregation Model ==
+
+Schelling built his original segregation model to understand the problem of racial segregation in the United States footnote:[Models of Segregation pg. 488], but he later expanded the model to cover other types of segregation including gender, language, age and income footnote:[Micromotives and Macrobehavior pgs. 135-190]. 
+
+Schelling\'s segregation model beautifully illustrates how to simplify individual choice and environmental interaction while preserving the fundamental properties of each.  The Schelling segregation model is simple, but the results can be surprising.  Schelling showed that a small preference for similar neighbors can lead to a highly segregated neighborhood.
+
+A Schelling model consists of people or households in a neighborhood. Each person has a type (white, black, brown, etc.) and a preference for what kind of neighbors would make them happy. A neighborhood is an arrangement of lots, typically in a grid, that can either be empty or contain people.  Schelling experimented with both one and two dimensional neighborhoods.  A person will be happy if their immediate neighbors meet their preference or they will be unhappy and want to move.  Empty lots are not counted in calculating preferences and a person needs to have at least one neighbor before preferences are calculated at all. A person surrounded by empty lots is assumed to be happy.
+
+[width="15%"]
+|=========
+|O |X |O |-
+|O |X |O |-
+|X |O |O |-
+|- |- |- |-
+|=========
+[[Figure1]]*Figure 1 Sample Neighborhood*
+
+
+For the example neighborhood in *Figure 1 Sample Neighborhood* the central X has eight neighbors with two X\'s and six O\'s.  If the center X has a preference for having neighbors like itself of .25 or less it will be happy otherwise it will want to move. The O in the lower right hand corner of the populated area has three neighbors, 2 O\'s and an X and has a similar neighbor score of 2/3 even though it is also adjacent to five empty lots. 
+
+The cycle of the Schelling model is as follows:
+
+1. People are laid out on a neighborhood grid.
+2. The unhappy people are identified.
+3. Unhappy people try to move to a different place in the neighborhood.
+4. Repeat the cycle as desired.
+
+== Schelling in Python ==
+
+An implementation of a Schelling segregation model is provided in the file SchellingSegregationModel.py.  The SchellingSegregationModel code can handle modeling segregation on discrete attributes like race, gender, and religion or on continuous attributes like age and income.  The provided model assumes that unhappy people can move to any empty lot or swap places with any other unhappy person.
+
+A critical part of the model is the Neighborhood class which contains the grid of lots in the neighborhood.  The neighborhood grid forms a torus, or doughnut shape, meaning that the grid wraps around its edges.  The lots may be filled with EmptyLot classes or they may be filled with implementations of the SchellingAgent class representing people.  The move() function on the Neighborhood class contains the code that combines the empty lots and unhappy people and initiates a random swap of unhappy pairs.  The neighborhood class contains a function called writeToCSV() that can be used to save the current state of the neighborhood to a CSV file for examination.
+
+[width="15%"]
+|=========
+|(0,0) |(1,0) |(2,0)
+|(0,1) |(1,1) |(2,1)
+|(0,2) |(1,2) |(2,2)
+|=========
+[[Figure2]]*Figure 2 Doughnut World Coordinates*
+
+In *Figure 2 Doughnut World Coordinates* the neighbors of the cell at coordinates (1,2) are (0,1),(1,1),(2,1),(0,2),(2,2),(0,0),(1,0) and (2,0).
+
+The people in the neighborhood are represented by classes descended from the SchellingAgent class.   The base SchellingAgent is designed as an ancestor class for representing segregation on discrete variables like race or gender.  The LikesSameAgent class represents a person who wants at least a minimal level of similar neighbors with a discrete attribute like race.  The LikesOthersAgent likes a neighborhood with at least minimal level of neighbors with a discrete attribute that is not the same as itself.  The ContinuousSchellingAgent class inherits from the SchellingAgent class to add support for calculating similarity for continuous attributes like age and income.  The assumption for continuous variables is that similarity does not need to be exact, close will do.  The ContinuousLikesSameAgent and ContinuousLikesOtherAgent are the continuous attribute equivalents of the LikesSameAgent and LikesOtherAgent classes.
+
+In order to use the code in SchellingSegregationModel to model you need a populated neighborhood to feed to the run() function.  There are four neighborhood population helper functions supplied with the model: likesSameNeighborhood, likesOthersNeighborhood,  likesOtherAgeNeighborhood, and likesSameAgeNeighborhood. 
+
+A quick introduction to the model code is provided in the function demo(). By default demo builds a segregation model using the likesSameNeighborhood helper function to populate a neighborhood with X\'s and O\'s who have a preference for similar neighbors in a grid of 400 squares. The demo people would like to have .3 of their neighbor the same as themselves.
